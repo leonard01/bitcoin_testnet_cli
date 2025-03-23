@@ -1,0 +1,26 @@
+{
+  "name": "bitcoin_testnet_cli",
+  "version": "1.0.0",
+  "description": "A bitcoin(BTC....possibly BCH * BSV) cli that performs various functions",
+  "main": "index.js",
+  "bin": {
+    "mycli": "bin/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leonard01/bitcoin_testnet_cli.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/leonard01/bitcoin_testnet_cli/issues"
+  },
+  "homepage": "https://github.com/leonard01/bitcoin_testnet_cli#readme",
+  "dependencies": {
+    "commander": "^13.1.0"
+  }
+}
