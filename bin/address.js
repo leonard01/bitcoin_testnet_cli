@@ -11,25 +11,17 @@ const ECPair = ECPairFactory(ecc);
 
 const program = new Command();
 
-// This script now supports:
-// 1) "Create Address <username>"       => Creates/updates an address
-// 2) "Address Balance <username>"      => Checks the testnet balance
-// 3) "Airdrop <username>"             => Shows faucet info
+// This script supports:
+// 1) "Create Address <username>" => Creates/updates an address
+// 2) "Address Balance <username>" => Checks the testnet balance (prints final BTC balance, plus satoshis if <1 BTC)
+// 3) "Airdrop <username>" => Faucet instructions
 program
   .argument('<command>', 'Command ("Create", "Address", or "Airdrop")')
-  .argument('[subcommand]', 'Subcommand ("Address" or "Balance") or <username> depending on the command')
-  .argument('[username]', 'Username (e.g. "Bob")')
+  .argument('[subcommand]', 'Subcommand ("Address", "Balance") or <username> depending on the command')
+  .argument('[username]', 'Username (e.g. "Alice")')
   .parse(process.argv);
 
 const [command, subcommand, username] = program.args;
-
-if (!command) {
-  console.error('Usage Examples:');
-  console.error('  ./address.js Create Address Bob');
-  console.error('  ./address.js Address Balance Bob');
-  console.error('  ./address.js Airdrop Bob');
-  process.exit(1);
-}
 
 // Ensure the "users" directory exists
 const usersDir = 'users';
@@ -37,12 +29,12 @@ if (!fs.existsSync(usersDir)) {
   fs.mkdirSync(usersDir, { recursive: true });
 }
 
-// Helper: path to a user’s JSON file
+// Helper: path to user file
 function getUserFilePath(user) {
   return `${usersDir}/${user}.json`;
 }
 
-// Helper: get or create testnet address from a keyPair
+// Helper: derive a testnet Bech32 address (P2WPKH)
 function deriveTestnetAddress(keyPair) {
   const pubkey = Buffer.isBuffer(keyPair.publicKey)
     ? keyPair.publicKey
@@ -55,10 +47,10 @@ function deriveTestnetAddress(keyPair) {
   return address;
 }
 
-/* -------------------------------------------------------
+/* =============================
    1) CREATE ADDRESS <username>
-   ------------------------------------------------------- */
-if (command.toLowerCase() === 'create' && subcommand?.toLowerCase() === 'address') {
+   ============================= */
+if (command?.toLowerCase() === 'create' && subcommand?.toLowerCase() === 'address') {
   if (!username) {
     console.error('Missing <username>. Usage: ./address.js Create Address Bob');
     process.exit(1);
@@ -67,7 +59,6 @@ if (command.toLowerCase() === 'create' && subcommand?.toLowerCase() === 'address
   const userFilePath = getUserFilePath(username);
 
   if (!fs.existsSync(userFilePath)) {
-    // No file => generate new private key, public key, address
     console.log(`User "${username}" does not exist. Generating new keys...`);
 
     const keyPair = ECPair.makeRandom({ rng: (size) => randomBytes(size) });
@@ -86,7 +77,6 @@ if (command.toLowerCase() === 'create' && subcommand?.toLowerCase() === 'address
     console.log(`Public key (hex):  ${publicKeyHex}`);
     console.log(`Address:           ${address}`);
   } else {
-    // File exists => read, re-derive or fix private key
     console.log(`User "${username}" already exists. Generating an address from existing keys...`);
 
     let userData;
@@ -115,12 +105,12 @@ if (command.toLowerCase() === 'create' && subcommand?.toLowerCase() === 'address
     console.log(`Address:           ${userData.address}`);
   }
 
-/* -------------------------------------------------------
+/* =============================
    2) ADDRESS BALANCE <username>
-   ------------------------------------------------------- */
-} else if (command.toLowerCase() === 'address' && subcommand?.toLowerCase() === 'balance') {
+   ============================= */
+} else if (command?.toLowerCase() === 'address' && subcommand?.toLowerCase() === 'balance') {
   if (!username) {
-    console.error('Missing <username>. Usage: ./address.js Address Balance Bob');
+    console.error('Missing <username>. Usage: ./address.js Address Balance Alice');
     process.exit(1);
   }
 
@@ -143,25 +133,37 @@ if (command.toLowerCase() === 'create' && subcommand?.toLowerCase() === 'address
     process.exit(1);
   }
 
-  // We'll use `execSync` to replicate the exact curl + jq command:
   try {
-    const cmd = `curl -s "https://mempool.space/testnet/api/address/${userData.address}" | jq .`;
-    console.log(`Fetching balance info for address: ${userData.address}\n`);
-    const result = execSync(cmd, { encoding: 'utf-8' });
-    console.log(result);
+    console.log(`Checking balance for "${username}" at ${userData.address}...`);
+    const cmd = `curl -s "https://mempool.space/testnet/api/address/${userData.address}"`;
+    const rawJson = execSync(cmd, { encoding: 'utf-8' });
+
+    const data = JSON.parse(rawJson);
+    const chainStats = data.chain_stats || {};
+    const funded = chainStats.funded_txo_sum || 0;  // total sats received
+    const spent = chainStats.spent_txo_sum || 0;    // total sats spent
+    const balanceSats = funded - spent;
+    const balanceBtc = balanceSats / 1e8;
+
+    console.log(`Confirmed Balance (BTC): ${balanceBtc}`);
+
+    // If less than 1 BTC, also show satoshis
+    if (balanceBtc < 1) {
+      console.log(`Confirmed Balance (Satoshis): ${balanceSats}`);
+    }
   } catch (err) {
-    console.error('Failed to fetch balance. Possibly service is down or "jq" is not installed.');
-    console.error(err.message);
+    console.error('Failed to fetch or parse balance data:', err.message);
   }
 
-/* -------------------------------------------------------
+/* =============================
    3) AIRDROP <username>
-   ------------------------------------------------------- */
-} else if (command.toLowerCase() === 'airdrop') {
+   ============================= */
+} else if (command?.toLowerCase() === 'airdrop') {
   if (!subcommand) {
     console.error('Missing <username>. Usage: ./address.js Airdrop Alice');
     process.exit(1);
   }
+
   const usernameForAirdrop = subcommand;
   const userFilePath = getUserFilePath(usernameForAirdrop);
 
@@ -185,7 +187,6 @@ if (command.toLowerCase() === 'create' && subcommand?.toLowerCase() === 'address
     process.exit(0);
   }
 
-  // Show instructions for manual faucet usage
   console.log(`Airdrop requested for user "${usernameForAirdrop}".`);
   console.log(`Address: ${userData.address}`);
   console.log('');
