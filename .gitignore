@@ -25,6 +25,7 @@ coverage/
 .DS_Store
 .env
 .env.*.local
+users/
 
 # Node-REPL history
 .node_repl_history
