@@ -55,7 +55,7 @@ To create a new user (and generate a private/public key pair):
 
 ```bash
 
-./keys.js Create Alice
+.bin/keys.js Create Alice
 ```
 
 If users/Alice.json does not exist, a new key pair is generated and saved to users/Alice.json.

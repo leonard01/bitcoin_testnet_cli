@@ -12,8 +12,21 @@ const program = new Command();
 
 // Expect two positional arguments: "Create" and <username>
 program
-  .argument('<command>', 'the command (e.g., "Create")')
-  .argument('<username>', 'the username to manage private/public keys')
+.name('bin/keys.js')
+.description(`A simple keys management CLI. Usage:
+
+./bin/keys.js Create <username>
+./bin/keys.js SomeOtherCommand ...
+`)
+.version('1.0.0', '-v, --version', 'Output the current version')
+.exitOverride((err) => {
+  // If Commander displayed help, exit with code 0 (no error)
+  if (err.code === 'commander.helpDisplayed') {
+    process.exit(0);
+  }
+  // Otherwise, handle or rethrow
+  process.exit(err.exitCode || 1);
+})
   .parse(process.argv);
 
 const [command, username] = program.args;

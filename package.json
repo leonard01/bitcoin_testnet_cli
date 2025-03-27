@@ -7,9 +7,6 @@
   "bin": {
     "mycli": "bin/index.js"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/leonard01/bitcoin_testnet_cli.git"
