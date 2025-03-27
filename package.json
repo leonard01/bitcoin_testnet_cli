@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A bitcoin(BTC....possibly BCH * BSV) cli that performs various functions",
   "main": "index.js",
+  "type": "module",
   "bin": {
     "mycli": "bin/index.js"
   },
@@ -21,6 +22,9 @@
   },
   "homepage": "https://github.com/leonard01/bitcoin_testnet_cli#readme",
   "dependencies": {
-    "commander": "^13.1.0"
+    "bitcoinjs-lib": "^6.1.7",
+    "commander": "^13.1.0",
+    "ecpair": "^3.0.0",
+    "tiny-secp256k1": "^2.2.3"
   }
 }
