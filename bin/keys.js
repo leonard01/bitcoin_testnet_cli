@@ -59,6 +59,7 @@ if (command.toLowerCase() === 'create') {
   // Generate a new key pair
   const keyPair = ECPair.makeRandom({
     rng: (size) => randomBytes(size),
+    network: bitcoin.networks.testnet
   });
 
   const privateKeyWIF = keyPair.toWIF();
